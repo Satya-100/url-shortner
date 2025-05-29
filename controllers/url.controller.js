@@ -17,6 +17,21 @@ async function generaterShortUrl(req, res) {
   return res.status(201).json({ message: "ShortId generated", shortID });
 }
 
+async function getAnalytics(req, res) {
+  const url = await Url.findOne({ shortId: req.params.shortId });
+
+  if (!url) {
+    return res.status(404).json({ message: "URL not found" });
+  }
+
+  return res.status(200).json({
+    redirectUrl: url.redirectUrl,
+    noOfClicks: url.visitHistory.length,
+    visitHistory: url.visitHistory,
+  });
+}
+
 module.exports = {
   generaterShortUrl,
+  getAnalytics,
 };
