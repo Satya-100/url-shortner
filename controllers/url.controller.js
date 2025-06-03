@@ -14,7 +14,10 @@ async function generaterShortUrl(req, res) {
     visitHistory: [],
   });
 
-  return res.status(201).json({ message: "ShortId generated", shortID });
+  return res.render("home", {
+    shortId: shortID,
+  })
+  // return res.status(201).json({ message: "ShortId generated", shortID });
 }
 
 async function getAnalytics(req, res) {
@@ -31,7 +34,27 @@ async function getAnalytics(req, res) {
   });
 }
 
+async function handleRedirectUrl(req, res) {
+  const url = await Url.findOneAndUpdate(
+    { shortId: req.params.shortId },
+    {
+      $push: {
+        visitHistory: {
+          timestamp: Date.now(),
+        },
+      },
+    }
+  );
+
+  if (!url) {
+    return res.status(404).json({ message: "URL not found" });
+  }
+
+  return res.status(200).redirect(url.redirectUrl);
+}
+
 module.exports = {
   generaterShortUrl,
   getAnalytics,
+  handleRedirectUrl,
 };

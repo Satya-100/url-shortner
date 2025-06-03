@@ -1,8 +1,15 @@
 const express = require("express");
-const urlRoute = require("./routes/url.route");
 const { connectMongoDB } = require("./config/connection");
 const Url = require("./models/url.model");
 require("dotenv").config();
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const { restrictToLoggedInUsersOnly } = require("./middlewares/auth");
+
+// routes
+const urlRoute = require("./routes/url.route");
+const staticRoute = require("./routes/static.route");
+const userRoute = require("./routes/user.route");
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -13,30 +20,16 @@ connectMongoDB(process.env.MONGODB_URL)
   .catch((error) => console.error("Database connection error:", error));
 
 // middlewares
-app.use(express.json());
+app.set("view engine", "ejs");
+app.set("views", path.resolve("./views"));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(cookieParser());
 
 // routes
-app.use("/url", urlRoute);
-
-app.get("/:shortId", async (req, res) => {
-  const url = await Url.findOneAndUpdate(
-    { shortId: req.params.shortId },
-    {
-      $push: {
-        visitHistory: {
-          timestamp: Date.now(),
-        },
-      },
-    }
-  );
-
-  if (!url) {
-    return res.status(404).json({ message: "URL not found" });
-  }
-
-  return res.status(200).redirect(url.redirectUrl);
-});
+app.use("/url", restrictToLoggedInUsersOnly, urlRoute);
+app.use("/", staticRoute);
+app.use("/user", userRoute);
 
 app.listen(port, () =>
   console.log(`Server is running on http://localhost:${port}`)
