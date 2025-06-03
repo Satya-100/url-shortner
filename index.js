@@ -4,7 +4,10 @@ const Url = require("./models/url.model");
 require("dotenv").config();
 const path = require("path");
 const cookieParser = require("cookie-parser");
-const { restrictToLoggedInUsersOnly } = require("./middlewares/auth");
+const {
+  restrictToLoggedInUsersOnly,
+  checkAuth,
+} = require("./middlewares/auth");
 
 // routes
 const urlRoute = require("./routes/url.route");
@@ -28,7 +31,7 @@ app.use(cookieParser());
 
 // routes
 app.use("/url", restrictToLoggedInUsersOnly, urlRoute);
-app.use("/", staticRoute);
+app.use("/", checkAuth, staticRoute);
 app.use("/user", userRoute);
 
 app.listen(port, () =>
